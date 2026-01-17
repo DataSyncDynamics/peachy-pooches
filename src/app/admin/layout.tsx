@@ -2,16 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Dog, LayoutDashboard, Calendar, Users, Settings, Menu, X, LogOut } from 'lucide-react';
+import { Dog, LayoutDashboard, Calendar, Users, Settings, Menu, X, LogOut, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { UnreadBadge } from '@/components/messaging/unread-badge';
+import { getConversationsWithDetails } from '@/lib/mock-data';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/clients', label: 'Clients', icon: Users },
+  { href: '/admin/messages', label: 'Messages', icon: MessageSquare, showBadge: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -22,6 +25,12 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Get unread message count
+  const unreadCount = useMemo(() => {
+    const conversations = getConversationsWithDetails();
+    return conversations.reduce((sum, conv) => sum + conv.unread_count, 0);
+  }, []);
 
   const NavContent = () => (
     <>
@@ -42,6 +51,7 @@ export default function AdminLayout({
           const Icon = item.icon;
           const isActive = pathname === item.href ||
             (item.href !== '/admin' && pathname.startsWith(item.href));
+          const showBadge = 'showBadge' in item && item.showBadge && unreadCount > 0;
 
           return (
             <Link
@@ -56,7 +66,14 @@ export default function AdminLayout({
               )}
             >
               <Icon className="h-5 w-5" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {showBadge && (
+                <UnreadBadge
+                  count={unreadCount}
+                  size="sm"
+                  className={isActive ? 'bg-primary-foreground text-primary' : ''}
+                />
+              )}
             </Link>
           );
         })}

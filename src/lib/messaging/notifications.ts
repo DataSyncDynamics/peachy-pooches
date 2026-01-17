@@ -5,10 +5,20 @@ import { Client, NotificationPreferences } from '@/types/database';
 // Initialize Resend for email
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Initialize Twilio for SMS
-const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
+// Initialize Twilio for SMS - only if valid credentials are provided
+// Twilio account SIDs start with 'AC'
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+const isValidTwilioConfig = twilioAccountSid?.startsWith('AC') && twilioAuthToken;
+
+let twilioClient: ReturnType<typeof twilio> | null = null;
+if (isValidTwilioConfig) {
+  try {
+    twilioClient = twilio(twilioAccountSid, twilioAuthToken);
+  } catch {
+    console.warn('Failed to initialize Twilio client - SMS notifications disabled');
+  }
+}
 
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const FROM_EMAIL = 'Peachy Pooches <noreply@peachypooches.com>';

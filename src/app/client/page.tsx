@@ -29,8 +29,9 @@ import {
   CheckCircle,
   XCircle,
   CalendarPlus,
+  MessageSquare,
 } from 'lucide-react';
-import { getAppointmentsWithDetails } from '@/lib/mock-data';
+import { getAppointmentsWithDetails, getConversationsWithDetails } from '@/lib/mock-data';
 import { formatPrice, formatDuration } from '@/lib/availability';
 import { cn } from '@/lib/utils';
 
@@ -152,6 +153,41 @@ export default function ClientPortal() {
             </Link>
           </Button>
         </div>
+
+        {/* Messages Card */}
+        {(() => {
+          const conversations = getConversationsWithDetails();
+          const clientConvs = conversations.filter((c) => c.client.email === email);
+          const unreadCount = clientConvs.reduce((sum, c) => sum + c.unread_count, 0);
+          return (
+            <Card className="mb-8 hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <Link href="/client/messages" className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "h-12 w-12 rounded-full flex items-center justify-center",
+                      unreadCount > 0 ? "bg-primary/20" : "bg-muted"
+                    )}>
+                      <MessageSquare className={cn(
+                        "h-6 w-6",
+                        unreadCount > 0 ? "text-primary" : "text-muted-foreground"
+                      )} />
+                    </div>
+                    <div>
+                      <p className="font-medium">Messages</p>
+                      <p className="text-sm text-muted-foreground">
+                        {unreadCount > 0
+                          ? `${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}`
+                          : 'No new messages'}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Upcoming Appointments */}
         <section className="mb-8">

@@ -28,7 +28,9 @@ import {
   Phone,
   Calendar,
   DollarSign,
+  MessageSquare,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { mockClients, mockPets, mockAppointments, mockServices } from '@/lib/mock-data';
 import { formatPrice } from '@/lib/availability';
 import { Client, Pet, Appointment } from '@/types/database';
@@ -41,6 +43,7 @@ interface ClientWithStats extends Client {
 }
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState<ClientWithStats | null>(null);
 
@@ -384,6 +387,17 @@ export default function ClientsPage() {
                 <div className="flex gap-2 pt-4 border-t">
                   <Button variant="outline" className="flex-1">
                     Edit Client
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedClient(null);
+                      router.push(`/admin/messages?newClient=${selectedClient.id}`);
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message
                   </Button>
                   <Button className="flex-1">Book Appointment</Button>
                 </div>

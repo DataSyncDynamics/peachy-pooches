@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
+// Client-side upload utilities
+// Actual uploads are done through the API route /api/messages/upload
 
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const BUCKET_NAME = 'message-attachments';
 
 export interface UploadResult {
   success: boolean;
@@ -11,15 +11,11 @@ export interface UploadResult {
   error?: string;
 }
 
-export async function uploadMessageAttachment(
-  file: File,
-  clientId: string,
-  documentType?: 'rabies_certificate' | 'vaccination_record' | 'other'
-): Promise<UploadResult> {
+export function validateFile(file: File): { valid: boolean; error?: string } {
   // Validate file type
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return {
-      success: false,
+      valid: false,
       error: `Invalid file type. Allowed types: JPG, PNG, PDF`,
     };
   }
@@ -27,67 +23,61 @@ export async function uploadMessageAttachment(
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
     return {
-      success: false,
+      valid: false,
       error: `File too large. Maximum size: 10MB`,
     };
   }
 
+  return { valid: true };
+}
+
+export async function uploadMessageAttachment(
+  file: File,
+  messageId: string,
+  clientId: string,
+  documentType?: 'rabies_certificate' | 'vaccination_record' | 'other'
+): Promise<UploadResult> {
+  const validation = validateFile(file);
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.error,
+    };
+  }
+
   try {
-    const supabase = await createClient();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('messageId', messageId);
+    formData.append('clientId', clientId);
+    if (documentType) {
+      formData.append('documentType', documentType);
+    }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const path = `${clientId}/${timestamp}_${sanitizedName}`;
+    const response = await fetch('/api/messages/upload', {
+      method: 'POST',
+      body: formData,
+    });
 
-    // Convert File to ArrayBuffer then to Buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(path, buffer, {
-        contentType: file.type,
-        cacheControl: '3600',
-      });
-
-    if (uploadError) {
+    if (!response.ok) {
+      const data = await response.json();
       return {
         success: false,
-        error: uploadError.message,
+        error: data.error || 'Upload failed',
       };
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(path);
-
+    const data = await response.json();
     return {
       success: true,
-      path,
-      url: urlData.publicUrl,
+      path: data.attachment.storage_path,
+      url: data.url,
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Upload failed',
     };
-  }
-}
-
-export async function deleteMessageAttachment(path: string): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-
-    const { error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([path]);
-
-    return !error;
-  } catch {
-    return false;
   }
 }
 
