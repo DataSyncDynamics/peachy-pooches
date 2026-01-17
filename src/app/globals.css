@@ -51,84 +51,93 @@
 
 :root {
   --radius: 0.625rem;
-  /* Peachy Pooches Brand Colors */
-  --peach: oklch(0.85 0.12 50);
-  --peach-dark: oklch(0.70 0.15 45);
-  --peach-light: oklch(0.95 0.06 55);
 
-  --background: oklch(0.995 0.005 55);
-  --foreground: oklch(0.20 0.02 45);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.02 45);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.02 45);
-  /* Primary is now peach/coral */
-  --primary: oklch(0.70 0.15 45);
-  --primary-foreground: oklch(1 0 0);
-  /* Secondary is a warm neutral */
-  --secondary: oklch(0.96 0.02 55);
-  --secondary-foreground: oklch(0.25 0.02 45);
-  --muted: oklch(0.96 0.01 55);
-  --muted-foreground: oklch(0.50 0.02 45);
-  /* Accent is lighter peach */
-  --accent: oklch(0.92 0.06 50);
-  --accent-foreground: oklch(0.25 0.02 45);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.90 0.02 55);
-  --input: oklch(0.90 0.02 55);
-  --ring: oklch(0.70 0.15 45);
-  /* Charts in warm palette */
-  --chart-1: oklch(0.70 0.15 45);
-  --chart-2: oklch(0.75 0.12 80);
-  --chart-3: oklch(0.60 0.10 30);
-  --chart-4: oklch(0.80 0.10 100);
-  --chart-5: oklch(0.65 0.08 20);
-  --sidebar: oklch(0.98 0.01 55);
-  --sidebar-foreground: oklch(0.20 0.02 45);
-  --sidebar-primary: oklch(0.70 0.15 45);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.94 0.04 50);
-  --sidebar-accent-foreground: oklch(0.25 0.02 45);
-  --sidebar-border: oklch(0.90 0.02 55);
-  --sidebar-ring: oklch(0.70 0.15 45);
+  /* Peachy Pooches Brand Colors from peachypooches.net */
+  /* Cream: #fcf7f6 | Mint: #daf2e6 | Gold: #f5bf3b | Slate Blue: #559fb8 | Charcoal: #212934 */
+  --brand-cream: #fcf7f6;
+  --brand-mint: #daf2e6;
+  --brand-gold: #f5bf3b;
+  --brand-slate-blue: #559fb8;
+  --brand-charcoal: #212934;
+
+  /* Background uses brand cream */
+  --background: #fcf7f6;
+  --foreground: #212934;
+
+  --card: #ffffff;
+  --card-foreground: #212934;
+  --popover: #ffffff;
+  --popover-foreground: #212934;
+
+  /* Primary is brand gold */
+  --primary: #f5bf3b;
+  --primary-foreground: #212934;
+
+  /* Secondary is brand mint */
+  --secondary: #daf2e6;
+  --secondary-foreground: #212934;
+
+  --muted: #f5f0ee;
+  --muted-foreground: #6b7280;
+
+  /* Accent is brand slate blue */
+  --accent: #559fb8;
+  --accent-foreground: #ffffff;
+
+  --destructive: #ef4444;
+  --border: #e5e0dd;
+  --input: #e5e0dd;
+  --ring: #f5bf3b;
+
+  /* Charts in brand palette */
+  --chart-1: #f5bf3b;
+  --chart-2: #559fb8;
+  --chart-3: #daf2e6;
+  --chart-4: #fcf7f6;
+  --chart-5: #212934;
+
+  --sidebar: #fcf7f6;
+  --sidebar-foreground: #212934;
+  --sidebar-primary: #f5bf3b;
+  --sidebar-primary-foreground: #212934;
+  --sidebar-accent: #daf2e6;
+  --sidebar-accent-foreground: #212934;
+  --sidebar-border: #e5e0dd;
+  --sidebar-ring: #f5bf3b;
 }
 
 .dark {
-  --peach: oklch(0.75 0.12 50);
-  --peach-dark: oklch(0.60 0.15 45);
-  --peach-light: oklch(0.85 0.08 55);
-
-  --background: oklch(0.15 0.01 45);
-  --foreground: oklch(0.95 0.01 55);
-  --card: oklch(0.20 0.01 45);
-  --card-foreground: oklch(0.95 0.01 55);
-  --popover: oklch(0.20 0.01 45);
-  --popover-foreground: oklch(0.95 0.01 55);
-  --primary: oklch(0.75 0.12 50);
-  --primary-foreground: oklch(0.15 0.01 45);
-  --secondary: oklch(0.25 0.01 45);
-  --secondary-foreground: oklch(0.95 0.01 55);
-  --muted: oklch(0.25 0.01 45);
-  --muted-foreground: oklch(0.65 0.02 55);
-  --accent: oklch(0.30 0.04 50);
-  --accent-foreground: oklch(0.95 0.01 55);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.12 50);
-  --chart-1: oklch(0.75 0.12 50);
-  --chart-2: oklch(0.70 0.10 80);
-  --chart-3: oklch(0.65 0.08 30);
-  --chart-4: oklch(0.75 0.08 100);
-  --chart-5: oklch(0.60 0.06 20);
-  --sidebar: oklch(0.18 0.01 45);
-  --sidebar-foreground: oklch(0.95 0.01 55);
-  --sidebar-primary: oklch(0.75 0.12 50);
-  --sidebar-primary-foreground: oklch(0.15 0.01 45);
-  --sidebar-accent: oklch(0.25 0.02 50);
-  --sidebar-accent-foreground: oklch(0.95 0.01 55);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.75 0.12 50);
+  --background: #1a1d23;
+  --foreground: #f5f5f5;
+  --card: #212934;
+  --card-foreground: #f5f5f5;
+  --popover: #212934;
+  --popover-foreground: #f5f5f5;
+  --primary: #f5bf3b;
+  --primary-foreground: #212934;
+  --secondary: #2d3748;
+  --secondary-foreground: #f5f5f5;
+  --muted: #2d3748;
+  --muted-foreground: #9ca3af;
+  --accent: #559fb8;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #f5bf3b;
+  --chart-1: #f5bf3b;
+  --chart-2: #559fb8;
+  --chart-3: #daf2e6;
+  --chart-4: #fcf7f6;
+  --chart-5: #6b7280;
+  --sidebar: #1a1d23;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-primary: #f5bf3b;
+  --sidebar-primary-foreground: #212934;
+  --sidebar-accent: #2d3748;
+  --sidebar-accent-foreground: #f5f5f5;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #f5bf3b;
 }
 
 @layer base {
@@ -148,5 +157,64 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out forwards;
+  }
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out forwards;
+  }
+  .animate-slide-in-right {
+    animation: slide-in-right 0.4s ease-out forwards;
+  }
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
   }
 }

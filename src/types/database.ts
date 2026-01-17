@@ -99,3 +99,61 @@ export interface BookingFormData {
 }
 
 export type BookingStep = 'service' | 'datetime' | 'pet' | 'contact' | 'confirm';
+
+// Messaging Types
+export interface Conversation {
+  id: string;
+  client_id: string;
+  appointment_id?: string;
+  subject?: string;
+  status: 'open' | 'closed' | 'archived';
+  last_message_at: string;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  client?: Client;
+  appointment?: Appointment;
+  unread_count?: number;
+  last_message?: Message;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_type: 'admin' | 'client';
+  sender_id?: string;
+  content: string;
+  is_read: boolean;
+  is_urgent: boolean;
+  created_at: string;
+  // Joined fields
+  attachments?: MessageAttachment[];
+}
+
+export interface MessageAttachment {
+  id: string;
+  message_id: string;
+  file_name: string;
+  file_type: 'image/jpeg' | 'image/png' | 'application/pdf';
+  file_size: number;
+  storage_path: string;
+  document_type?: 'rabies_certificate' | 'vaccination_record' | 'other';
+  created_at: string;
+}
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  content: string;
+  category?: 'appointment' | 'reminder' | 'document_request' | 'general';
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface NotificationPreferences {
+  id: string;
+  client_id: string;
+  email_enabled: boolean;
+  sms_enabled: boolean;
+  created_at: string;
+}

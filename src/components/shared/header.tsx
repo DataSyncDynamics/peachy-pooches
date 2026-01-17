@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Dog, Phone, Menu, X } from 'lucide-react';
+import Image from 'next/image';
+import { Phone, MessageSquare, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
+import { BUSINESS } from '@/lib/constants';
+import { IMAGES } from '@/lib/images';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,15 +17,14 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
-            <Dog className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold leading-none text-foreground">
-              Peachy Pooches
-            </span>
-            <span className="text-xs text-muted-foreground">Dog Grooming</span>
-          </div>
+          <Image
+            src={IMAGES.logo}
+            alt="Peachy Pooches Logo"
+            width={120}
+            height={19}
+            className="h-8 w-auto"
+          />
+          <span className="text-sm text-muted-foreground">{BUSINESS.subtitle}</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -39,9 +41,15 @@ export function Header() {
           >
             Admin
           </Link>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Phone className="h-4 w-4" />
-            <span className="text-sm">(555) 123-GROOM</span>
+          <div className="flex items-center gap-4 text-muted-foreground">
+            <a href={`tel:${BUSINESS.phone.replace(/-/g, '')}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+              <Phone className="h-4 w-4" />
+              <span className="text-sm">{BUSINESS.phone}</span>
+            </a>
+            <a href={`sms:${BUSINESS.textNumber.replace(/-/g, '')}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-sm">Text Us</span>
+            </a>
           </div>
           <Button asChild>
             <Link href="/book">Book Appointment</Link>
@@ -80,9 +88,15 @@ export function Header() {
                 My Appointments
               </Link>
               <div className="pt-4 border-t">
-                <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                  <Phone className="h-4 w-4" />
-                  <span>(555) 123-GROOM</span>
+                <div className="space-y-3 mb-4">
+                  <a href={`tel:${BUSINESS.phone.replace(/-/g, '')}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                    <Phone className="h-4 w-4" />
+                    <span>Call: {BUSINESS.phone}</span>
+                  </a>
+                  <a href={`sms:${BUSINESS.textNumber.replace(/-/g, '')}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Text: {BUSINESS.textNumber}</span>
+                  </a>
                 </div>
                 <Button asChild className="w-full" onClick={() => setIsOpen(false)}>
                   <Link href="/book">Book Appointment</Link>
