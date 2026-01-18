@@ -1,46 +1,67 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   format,
   startOfWeek,
   endOfWeek,
+  startOfMonth,
+  endOfMonth,
   eachDayOfInterval,
   isSameDay,
+  isSameMonth,
   addWeeks,
   subWeeks,
+  addMonths,
+  subMonths,
   isToday,
   addDays,
   parse,
-  isSameMonth,
+  addMinutes,
 } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  CalendarDays,
   Dog,
   Clock,
   User,
   Phone,
   Mail,
   FileText,
+  Check,
+  CalendarClock,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockBusinessHours, getAppointmentsWithDetails } from '@/lib/mock-data';
+import { mockBusinessHours, getAppointmentsWithDetails, updateAppointmentStatus, updateAppointmentTime } from '@/lib/mock-data';
 import { formatPrice, formatDuration } from '@/lib/availability';
 import { Appointment, Client, Pet, Service } from '@/types/database';
+import { toast } from 'sonner';
 
-type ViewMode = 'day' | 'week';
+type ViewMode = 'day' | 'week' | 'month';
+type StatusFilter = 'all' | 'pending' | 'confirmed' | 'completed';
 
 type AppointmentWithDetails = Appointment & {
   client: Client;
@@ -51,9 +72,112 @@ type AppointmentWithDetails = Appointment & {
 export default function AdminCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDetails | null>(null);
+  const [isRescheduleMode, setIsRescheduleMode] = useState(false);
+  const [rescheduleForm, setRescheduleForm] = useState({
+    date: '',
+    time: '',
+  });
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const appointmentsWithDetails = useMemo(() => getAppointmentsWithDetails(), []);
+  const allAppointments = useMemo(() => getAppointmentsWithDetails(), [refreshKey]);
+
+  // Filter appointments by status
+  const appointmentsWithDetails = useMemo(() => {
+    if (statusFilter === 'all') return allAppointments;
+    return allAppointments.filter((apt) => apt.status === statusFilter);
+  }, [allAppointments, statusFilter]);
+
+  // Month view calendar days
+  const monthDays = useMemo(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const calendarStart = startOfWeek(monthStart);
+    const calendarEnd = endOfWeek(monthEnd);
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [currentDate]);
+
+  // Generate time slots for reschedule picker
+  const timeSlotOptions = useMemo(() => {
+    const slots = [];
+    for (let hour = 8; hour <= 17; hour++) {
+      for (let min = 0; min < 60; min += 30) {
+        const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+        const label = format(parse(time, 'HH:mm', new Date()), 'h:mm a');
+        slots.push({ value: time, label });
+      }
+    }
+    return slots;
+  }, []);
+
+  const handleConfirmAppointment = useCallback(() => {
+    if (!selectedAppointment) return;
+
+    const updated = updateAppointmentStatus(selectedAppointment.id, 'confirmed');
+    if (updated) {
+      toast.success('Appointment confirmed!');
+      setRefreshKey((k) => k + 1);
+      setSelectedAppointment({
+        ...selectedAppointment,
+        status: 'confirmed',
+      });
+    } else {
+      toast.error('Failed to confirm appointment');
+    }
+  }, [selectedAppointment]);
+
+  const handleMarkComplete = useCallback(() => {
+    if (!selectedAppointment) return;
+
+    const updated = updateAppointmentStatus(selectedAppointment.id, 'completed');
+    if (updated) {
+      toast.success('Appointment marked as complete!');
+      setRefreshKey((k) => k + 1);
+      setSelectedAppointment({
+        ...selectedAppointment,
+        status: 'completed',
+      });
+    } else {
+      toast.error('Failed to update appointment');
+    }
+  }, [selectedAppointment]);
+
+  const handleOpenReschedule = useCallback(() => {
+    if (!selectedAppointment) return;
+    const startDate = new Date(selectedAppointment.start_time);
+    setRescheduleForm({
+      date: format(startDate, 'yyyy-MM-dd'),
+      time: format(startDate, 'HH:mm'),
+    });
+    setIsRescheduleMode(true);
+  }, [selectedAppointment]);
+
+  const handleReschedule = useCallback(() => {
+    if (!selectedAppointment || !rescheduleForm.date || !rescheduleForm.time) return;
+
+    const newStartTime = new Date(`${rescheduleForm.date}T${rescheduleForm.time}:00`);
+    const newEndTime = addMinutes(newStartTime, selectedAppointment.service.duration_minutes);
+
+    const updated = updateAppointmentTime(
+      selectedAppointment.id,
+      newStartTime.toISOString(),
+      newEndTime.toISOString()
+    );
+
+    if (updated) {
+      toast.success('Appointment rescheduled!');
+      setIsRescheduleMode(false);
+      setRefreshKey((k) => k + 1);
+      setSelectedAppointment({
+        ...selectedAppointment,
+        start_time: newStartTime.toISOString(),
+        end_time: newEndTime.toISOString(),
+      });
+    } else {
+      toast.error('Failed to reschedule appointment');
+    }
+  }, [selectedAppointment, rescheduleForm]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate);
@@ -84,6 +208,8 @@ export default function AdminCalendarPage() {
   const navigatePrev = () => {
     if (viewMode === 'week') {
       setCurrentDate(subWeeks(currentDate, 1));
+    } else if (viewMode === 'month') {
+      setCurrentDate(subMonths(currentDate, 1));
     } else {
       setCurrentDate(addDays(currentDate, -1));
     }
@@ -92,10 +218,31 @@ export default function AdminCalendarPage() {
   const navigateNext = () => {
     if (viewMode === 'week') {
       setCurrentDate(addWeeks(currentDate, 1));
+    } else if (viewMode === 'month') {
+      setCurrentDate(addMonths(currentDate, 1));
     } else {
       setCurrentDate(addDays(currentDate, 1));
     }
   };
+
+  // Quick status update handlers
+  const handleQuickConfirm = useCallback((apt: AppointmentWithDetails, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = updateAppointmentStatus(apt.id, 'confirmed');
+    if (updated) {
+      toast.success('Appointment confirmed!');
+      setRefreshKey((k) => k + 1);
+    }
+  }, []);
+
+  const handleQuickComplete = useCallback((apt: AppointmentWithDetails, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = updateAppointmentStatus(apt.id, 'completed');
+    if (updated) {
+      toast.success('Appointment completed!');
+      setRefreshKey((k) => k + 1);
+    }
+  }, []);
 
   const goToToday = () => {
     setCurrentDate(new Date());
@@ -141,15 +288,16 @@ export default function AdminCalendarPage() {
             <TabsList>
               <TabsTrigger value="day">Day</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation & Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={navigatePrev}>
                 <ChevronLeft className="h-4 w-4" />
@@ -165,23 +313,133 @@ export default function AdminCalendarPage() {
             <h2 className="text-lg font-semibold">
               {viewMode === 'week'
                 ? `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`
-                : format(currentDate, 'EEEE, MMMM d, yyyy')}
+                : viewMode === 'month'
+                  ? format(currentDate, 'MMMM yyyy')
+                  : format(currentDate, 'EEEE, MMMM d, yyyy')}
             </h2>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-green-500" /> Confirmed
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-yellow-500" /> Pending
-              </span>
+            <div className="flex items-center gap-3">
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-[140px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Legend */}
+              <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-green-500" /> Confirmed
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-yellow-500" /> Pending
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-blue-500" /> Complete
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Calendar View */}
-      {viewMode === 'week' ? (
+      {viewMode === 'month' ? (
+        /* Month View */
+        <Card>
+          <CardContent className="p-4">
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {monthDays.map((day) => {
+                const dayAppointments = getAppointmentsForDate(day).filter(
+                  (apt) => apt.status !== 'cancelled'
+                );
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const dayOpen = isDayOpen(day);
+
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={cn(
+                      'min-h-[100px] p-2 border rounded-lg',
+                      !isCurrentMonth && 'bg-muted/30',
+                      !dayOpen && isCurrentMonth && 'bg-muted/20',
+                      isToday(day) && 'border-primary border-2'
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span
+                        className={cn(
+                          'text-sm font-medium',
+                          !isCurrentMonth && 'text-muted-foreground',
+                          isToday(day) && 'text-primary'
+                        )}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {!dayOpen && isCurrentMonth && (
+                        <Badge variant="secondary" className="text-[10px] px-1">
+                          Closed
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {dayAppointments.slice(0, 3).map((apt) => (
+                        <button
+                          key={apt.id}
+                          onClick={() => setSelectedAppointment(apt)}
+                          className={cn(
+                            'w-full text-left text-[10px] px-1.5 py-0.5 rounded text-white truncate group relative',
+                            getStatusColor(apt.status)
+                          )}
+                        >
+                          <span className="truncate">
+                            {format(new Date(apt.start_time), 'h:mm')} {apt.pet.name}
+                          </span>
+                          {/* Quick Actions on Hover */}
+                          <div className="hidden group-hover:flex absolute right-0.5 top-0.5 gap-0.5">
+                            {apt.status === 'pending' && (
+                              <button
+                                onClick={(e) => handleQuickConfirm(apt, e)}
+                                className="p-0.5 bg-white/20 rounded hover:bg-white/40"
+                                title="Confirm"
+                              >
+                                <Check className="h-2.5 w-2.5" />
+                              </button>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                      {dayAppointments.length > 3 && (
+                        <p className="text-[10px] text-muted-foreground text-center">
+                          +{dayAppointments.length - 3} more
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ) : viewMode === 'week' ? (
+        /* Week View */
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
@@ -252,7 +510,7 @@ export default function AdminCalendarPage() {
                         key={apt.id}
                         onClick={() => setSelectedAppointment(apt)}
                         className={cn(
-                          'absolute rounded-md p-2 text-left text-xs text-white overflow-hidden transition-transform hover:scale-[1.02] hover:z-10',
+                          'absolute rounded-md p-2 text-left text-xs text-white overflow-hidden transition-transform hover:scale-[1.02] hover:z-10 group',
                           getStatusColor(apt.status)
                         )}
                         style={{
@@ -267,6 +525,27 @@ export default function AdminCalendarPage() {
                         <p className="truncate opacity-75">
                           {format(new Date(apt.start_time), 'h:mm a')}
                         </p>
+                        {/* Quick Actions on Hover */}
+                        <div className="hidden group-hover:flex absolute right-1 top-1 gap-1">
+                          {apt.status === 'pending' && (
+                            <button
+                              onClick={(e) => handleQuickConfirm(apt, e)}
+                              className="p-1 bg-white/20 rounded hover:bg-white/40"
+                              title="Confirm"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                          )}
+                          {apt.status === 'confirmed' && (
+                            <button
+                              onClick={(e) => handleQuickComplete(apt, e)}
+                              className="p-1 bg-white/20 rounded hover:bg-white/40"
+                              title="Mark Complete"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
                       </button>
                     );
                   });
@@ -348,10 +627,15 @@ export default function AdminCalendarPage() {
       {/* Appointment Detail Dialog */}
       <Dialog
         open={!!selectedAppointment}
-        onOpenChange={() => setSelectedAppointment(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedAppointment(null);
+            setIsRescheduleMode(false);
+          }
+        }}
       >
         <DialogContent className="max-w-md">
-          {selectedAppointment && (
+          {selectedAppointment && !isRescheduleMode && (
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
@@ -468,17 +752,84 @@ export default function AdminCalendarPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-4 border-t">
-                  <Button variant="outline" className="flex-1">
+                  <Button variant="outline" className="flex-1" onClick={handleOpenReschedule}>
+                    <CalendarClock className="h-4 w-4 mr-2" />
                     Reschedule
                   </Button>
                   {selectedAppointment.status === 'pending' && (
-                    <Button className="flex-1">Confirm</Button>
+                    <Button className="flex-1" onClick={handleConfirmAppointment}>
+                      <Check className="h-4 w-4 mr-2" />
+                      Confirm
+                    </Button>
                   )}
                   {selectedAppointment.status === 'confirmed' && (
-                    <Button className="flex-1">Mark Complete</Button>
+                    <Button className="flex-1" onClick={handleMarkComplete}>
+                      <Check className="h-4 w-4 mr-2" />
+                      Complete
+                    </Button>
                   )}
                 </div>
               </div>
+            </>
+          )}
+
+          {/* Reschedule Mode */}
+          {selectedAppointment && isRescheduleMode && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5 text-primary" />
+                  Reschedule Appointment
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="p-3 rounded-lg bg-accent/50">
+                  <p className="font-medium">{selectedAppointment.pet.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedAppointment.service.name} ({formatDuration(selectedAppointment.service.duration_minutes)})
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reschedule-date">New Date</Label>
+                  <Input
+                    id="reschedule-date"
+                    type="date"
+                    value={rescheduleForm.date}
+                    onChange={(e) => setRescheduleForm({ ...rescheduleForm, date: e.target.value })}
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reschedule-time">New Time</Label>
+                  <Select
+                    value={rescheduleForm.time}
+                    onValueChange={(value) => setRescheduleForm({ ...rescheduleForm, time: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlotOptions.map((slot) => (
+                        <SelectItem key={slot.value} value={slot.value}>
+                          {slot.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRescheduleMode(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleReschedule}>
+                  Confirm Reschedule
+                </Button>
+              </DialogFooter>
             </>
           )}
         </DialogContent>

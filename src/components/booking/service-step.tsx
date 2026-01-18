@@ -18,6 +18,7 @@ const categoryLabels: Record<string, string> = {
 export function ServiceStep() {
   const { formData, updateFormData } = useBooking();
   const selectedId = formData.service?.id;
+  const selectedAddOns = formData.selectedAddOns || [];
 
   const groupedServices = mockServices.reduce(
     (acc, service) => {
@@ -52,7 +53,23 @@ export function ServiceStep() {
             </h3>
             <div className="grid gap-3">
               {services.map((service) => {
-                const isSelected = selectedId === service.id;
+                const isAddOn = category === 'addon';
+                const isSelected = isAddOn
+                  ? selectedAddOns.some(addon => addon.id === service.id)
+                  : selectedId === service.id;
+
+                const handleClick = () => {
+                  if (isAddOn) {
+                    const isCurrentlySelected = selectedAddOns.some(a => a.id === service.id);
+                    const newAddOns = isCurrentlySelected
+                      ? selectedAddOns.filter(a => a.id !== service.id)
+                      : [...selectedAddOns, service];
+                    updateFormData({ selectedAddOns: newAddOns });
+                  } else {
+                    updateFormData({ service });
+                  }
+                };
+
                 return (
                   <Card
                     key={service.id}
@@ -62,7 +79,7 @@ export function ServiceStep() {
                         ? 'ring-2 ring-primary bg-accent/50'
                         : 'hover:bg-accent/30'
                     )}
-                    onClick={() => updateFormData({ service })}
+                    onClick={handleClick}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">

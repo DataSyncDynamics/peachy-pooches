@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Header } from '@/components/shared/header';
@@ -43,9 +43,16 @@ export default function ClientMessagesPage() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [messageRefreshKey, setMessageRefreshKey] = useState(0);
 
   const { conversation, isLoading: conversationLoading } = useMessages(selectedConversationId);
-  const { refresh } = useConversations();
+  const { refresh: refreshConversations } = useConversations();
+
+  // Trigger refresh by incrementing key (forces MessageThread to re-fetch)
+  const handleMessageSent = useCallback(() => {
+    setMessageRefreshKey((prev) => prev + 1);
+    refreshConversations();
+  }, [refreshConversations]);
 
   // Filter conversations for this client
   const clientConversations = useMemo(() => {
@@ -206,6 +213,7 @@ export default function ClientMessagesPage() {
 
                   {/* Messages */}
                   <MessageThread
+                    key={`${selectedConversationId}-${messageRefreshKey}`}
                     conversationId={selectedConversationId}
                     isAdmin={false}
                   />
@@ -215,7 +223,7 @@ export default function ClientMessagesPage() {
                     <MessageComposer
                       conversationId={selectedConversationId}
                       senderType="client"
-                      onMessageSent={refresh}
+                      onMessageSent={handleMessageSent}
                       placeholder="Type a message..."
                       showTemplates={false}
                       showUrgent={false}

@@ -584,3 +584,132 @@ export function getMessagesWithAttachments(conversationId: string): (Message & {
     }))
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
+
+// ============================================
+// Mutation Helpers (for admin actions)
+// ============================================
+
+// Update appointment status
+export function updateAppointmentStatus(
+  appointmentId: string,
+  status: Appointment['status']
+): Appointment | null {
+  const index = mockAppointments.findIndex((a) => a.id === appointmentId);
+  if (index === -1) return null;
+
+  mockAppointments[index] = {
+    ...mockAppointments[index],
+    status,
+    updated_at: new Date().toISOString(),
+  };
+  return mockAppointments[index];
+}
+
+// Update appointment time
+export function updateAppointmentTime(
+  appointmentId: string,
+  startTime: string,
+  endTime: string
+): Appointment | null {
+  const index = mockAppointments.findIndex((a) => a.id === appointmentId);
+  if (index === -1) return null;
+
+  mockAppointments[index] = {
+    ...mockAppointments[index],
+    start_time: startTime,
+    end_time: endTime,
+    updated_at: new Date().toISOString(),
+  };
+  return mockAppointments[index];
+}
+
+// Update client
+export function updateClient(
+  clientId: string,
+  updates: Partial<Pick<Client, 'first_name' | 'last_name' | 'email' | 'phone' | 'notes'>>
+): Client | null {
+  const index = mockClients.findIndex((c) => c.id === clientId);
+  if (index === -1) return null;
+
+  mockClients[index] = {
+    ...mockClients[index],
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
+  return mockClients[index];
+}
+
+// Service CRUD operations
+export function createService(service: Omit<Service, 'id' | 'created_at' | 'updated_at'>): Service {
+  const newService: Service = {
+    ...service,
+    id: `s${Date.now()}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  mockServices.push(newService);
+  return newService;
+}
+
+export function updateService(
+  serviceId: string,
+  updates: Partial<Pick<Service, 'name' | 'description' | 'duration_minutes' | 'price' | 'category' | 'is_active'>>
+): Service | null {
+  const index = mockServices.findIndex((s) => s.id === serviceId);
+  if (index === -1) return null;
+
+  mockServices[index] = {
+    ...mockServices[index],
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
+  return mockServices[index];
+}
+
+export function deleteService(serviceId: string): boolean {
+  const index = mockServices.findIndex((s) => s.id === serviceId);
+  if (index === -1) return false;
+
+  mockServices.splice(index, 1);
+  return true;
+}
+
+// Message template CRUD operations
+export function updateMessageTemplate(
+  templateId: string,
+  updates: Partial<Pick<MessageTemplate, 'name' | 'content' | 'category' | 'is_active'>>
+): MessageTemplate | null {
+  const index = mockMessageTemplates.findIndex((t) => t.id === templateId);
+  if (index === -1) return null;
+
+  mockMessageTemplates[index] = {
+    ...mockMessageTemplates[index],
+    ...updates,
+  };
+  return mockMessageTemplates[index];
+}
+
+export function createMessageTemplate(
+  template: Omit<MessageTemplate, 'id' | 'created_at'>
+): MessageTemplate {
+  const newTemplate: MessageTemplate = {
+    ...template,
+    id: `mt${Date.now()}`,
+    created_at: new Date().toISOString(),
+  };
+  mockMessageTemplates.push(newTemplate);
+  return newTemplate;
+}
+
+// Business settings update
+export function updateBusinessHours(hours: BusinessHours[]): void {
+  hours.forEach((h) => {
+    const index = mockBusinessHours.findIndex((bh) => bh.id === h.id);
+    if (index !== -1) {
+      mockBusinessHours[index] = {
+        ...h,
+        updated_at: new Date().toISOString(),
+      };
+    }
+  });
+}

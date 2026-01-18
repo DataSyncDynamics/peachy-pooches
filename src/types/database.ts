@@ -82,6 +82,7 @@ export interface TimeSlot {
 
 export interface BookingFormData {
   service?: Service;
+  selectedAddOns?: Service[];  // Array for multi-select add-ons
   date?: Date;
   time?: string;
   pet?: {

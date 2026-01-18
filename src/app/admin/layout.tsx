@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Dog, LayoutDashboard, Calendar, Users, Settings, Menu, X, LogOut, MessageSquare } from 'lucide-react';
+import { Dog, LayoutDashboard, Calendar, Users, Settings, Menu, X, LogOut, MessageSquare, Scissors } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/clients', label: 'Clients', icon: Users },
+  { href: '/admin/services', label: 'Services', icon: Scissors },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare, showBadge: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];

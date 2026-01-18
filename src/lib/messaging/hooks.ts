@@ -62,6 +62,7 @@ export function useMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<MessageWithAttachments[]>([]);
   const [conversation, setConversation] = useState<ConversationWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!conversationId) {
@@ -86,9 +87,13 @@ export function useMessages(conversationId: string | null) {
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [conversationId]);
+  }, [conversationId, refreshKey]);
 
-  return { messages, conversation, isLoading };
+  const refresh = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
+  return { messages, conversation, isLoading, refresh };
 }
 
 // Hook for sending messages

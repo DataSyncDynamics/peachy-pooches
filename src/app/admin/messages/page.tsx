@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ConversationList } from '@/components/messaging/conversation-list';
@@ -55,10 +55,17 @@ function AdminMessagesContent() {
   const [newClientId, setNewClientId] = useState('');
   const [newSubject, setNewSubject] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [messageRefreshKey, setMessageRefreshKey] = useState(0);
 
   const { conversation, isLoading: conversationLoading } = useMessages(selectedConversationId);
-  const { refresh } = useConversations();
+  const { refresh: refreshConversations } = useConversations();
   const { createConversation, isCreating } = useCreateConversation();
+
+  // Trigger refresh by incrementing key (forces MessageThread to re-fetch)
+  const handleMessageSent = useCallback(() => {
+    setMessageRefreshKey((prev) => prev + 1);
+    refreshConversations();
+  }, [refreshConversations]);
 
   // Handle newClient query parameter (from "Message Client" button)
   useEffect(() => {
@@ -87,7 +94,7 @@ function AdminMessagesContent() {
       setNewSubject('');
       setNewMessage('');
       setSelectedConversationId(conv.id);
-      refresh();
+      refreshConversations();
     }
   };
 
@@ -95,7 +102,7 @@ function AdminMessagesContent() {
     if (!selectedConversationId) return;
     // In a real app, this would call the API
     // For now, just update mock data and refresh
-    refresh();
+    refreshConversations();
   };
 
   return (
@@ -183,6 +190,7 @@ function AdminMessagesContent() {
 
             {/* Messages */}
             <MessageThread
+              key={`${selectedConversationId}-${messageRefreshKey}`}
               conversationId={selectedConversationId}
               isAdmin={true}
             />
@@ -192,7 +200,7 @@ function AdminMessagesContent() {
               <MessageComposer
                 conversationId={selectedConversationId}
                 senderType="admin"
-                onMessageSent={refresh}
+                onMessageSent={handleMessageSent}
                 showTemplates={true}
                 showUrgent={true}
               />
@@ -207,7 +215,7 @@ function AdminMessagesContent() {
                   className="ml-1"
                   onClick={() => {
                     // Reopen conversation
-                    refresh();
+                    refreshConversations();
                   }}
                 >
                   Reopen
