@@ -2,8 +2,14 @@ import { Resend } from 'resend';
 import twilio from 'twilio';
 import { Client, NotificationPreferences } from '@/types/database';
 
-// Initialize Resend for email
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend for email - lazy initialization to avoid build errors
+let resend: Resend | null = null;
+function getResendClient(): Resend | null {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 // Initialize Twilio for SMS - only if valid credentials are provided
 // Twilio account SIDs start with 'AC'
@@ -42,9 +48,10 @@ export async function sendMessageNotification(
   const smsEnabled = preferences?.sms_enabled ?? false;
 
   // Send email notification
-  if (emailEnabled && client.email) {
+  const emailClient = getResendClient();
+  if (emailEnabled && client.email && emailClient) {
     try {
-      await resend.emails.send({
+      await emailClient.emails.send({
         from: FROM_EMAIL,
         to: client.email,
         subject: isUrgent

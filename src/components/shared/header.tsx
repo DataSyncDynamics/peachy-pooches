@@ -32,8 +32,8 @@ export function Header({ variant = 'default' }: HeaderProps) {
           <Image
             src={IMAGES.logo}
             alt="Peachy Pooches Logo"
-            width={120}
-            height={19}
+            width={400}
+            height={62}
             className={`h-14 w-auto ${isTransparent ? 'brightness-0 invert' : ''}`}
           />
           <span className={`text-sm ${isTransparent ? 'text-white/70' : 'text-muted-foreground'}`}>
