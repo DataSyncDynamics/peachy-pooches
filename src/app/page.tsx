@@ -361,7 +361,6 @@ export default function HomePage() {
                       alt={`${service.name} grooming result`}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      style={service.imagePosition ? { objectPosition: service.imagePosition } : undefined}
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                     {/* Subtle gradient overlay at bottom for smooth transition */}
