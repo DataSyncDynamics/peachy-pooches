@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { service, date, time, pet, client } = body;
+    const { service, date, time, pet, client, stylist_id } = body;
 
     // Validate required fields
     if (!service || !date || !time || !pet || !client) {
@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
         pet: pet.name,
         client: `${client.firstName} ${client.lastName}`,
         total: service.price,
+        stylist_id: stylist_id || null,
       },
     });
   } catch (error) {

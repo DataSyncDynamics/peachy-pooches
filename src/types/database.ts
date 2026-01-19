@@ -10,6 +10,13 @@ export interface Service {
   updated_at: string;
 }
 
+export interface Stylist {
+  id: string;
+  name: string;
+  color: string;
+  is_active: boolean;
+}
+
 export interface Client {
   id: string;
   email: string;
@@ -17,6 +24,10 @@ export interface Client {
   first_name: string;
   last_name: string;
   notes?: string;
+  verification_status: 'pending_review' | 'documents_requested' | 'verified' | 'rejected';
+  verification_notes?: string;
+  verified_at?: string;
+  verified_by?: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +42,10 @@ export interface Pet {
   coat_type?: string;
   temperament_notes?: string;
   special_instructions?: string;
+  birth_date?: string;
+  photo_url?: string;
+  vaccination_expiry?: string;
+  preferred_style?: string;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +55,7 @@ export interface Appointment {
   client_id: string;
   pet_id: string;
   service_id: string;
+  stylist_id?: string;
   start_time: string;
   end_time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
@@ -51,6 +67,7 @@ export interface Appointment {
   client?: Client;
   pet?: Pet;
   service?: Service;
+  stylist?: Stylist;
 }
 
 export interface BusinessHours {
@@ -85,6 +102,7 @@ export interface BookingFormData {
   selectedAddOns?: Service[];  // Array for multi-select add-ons
   date?: Date;
   time?: string;
+  stylist_id?: string;  // Optional - client can skip
   pet?: {
     name: string;
     breed: string;
@@ -156,5 +174,19 @@ export interface NotificationPreferences {
   client_id: string;
   email_enabled: boolean;
   sms_enabled: boolean;
+  created_at: string;
+}
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  pet_id?: string;
+  attachment_id: string; // Links to MessageAttachment
+  document_type: 'rabies_certificate' | 'vaccination_record' | 'other';
+  status: 'pending_review' | 'approved' | 'rejected' | 'expired';
+  reviewed_at?: string;
+  reviewed_by?: string;
+  expiry_date?: string;
+  notes?: string;
   created_at: string;
 }

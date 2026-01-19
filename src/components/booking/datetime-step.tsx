@@ -4,11 +4,12 @@ import { useState, useMemo } from 'react';
 import { format, addDays, startOfDay, isToday, isSameDay } from 'date-fns';
 import { useBooking } from '@/lib/booking-context';
 import { getTimeSlots, isDayOpen, formatDuration } from '@/lib/availability';
+import { mockStylists } from '@/lib/mock-data';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, CalendarDays, Check } from 'lucide-react';
+import { Clock, CalendarDays, Check, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function DateTimeStep() {
@@ -34,6 +35,12 @@ export function DateTimeStep() {
   const handleTimeSelect = (time: string) => {
     updateFormData({ time });
   };
+
+  const handleStylistSelect = (stylistId: string | undefined) => {
+    updateFormData({ stylist_id: stylistId });
+  };
+
+  const activeStylists = mockStylists.filter((s) => s.is_active);
 
   // Disable past dates and closed days
   const disabledDays = (date: Date) => {
@@ -142,6 +149,66 @@ export function DateTimeStep() {
         </div>
       </div>
 
+      {/* Stylist Selection (Optional) */}
+      {selectedDate && formData.time && (
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Select a Stylist (Optional)
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* No Preference Option */}
+            <button
+              type="button"
+              onClick={() => handleStylistSelect(undefined)}
+              className={cn(
+                'p-4 rounded-lg border-2 text-left transition-all',
+                formData.stylist_id === undefined
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                  : 'border-muted hover:border-muted-foreground/30'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gray-300" />
+                <span className="font-medium">No Preference</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Any available stylist
+              </p>
+              {formData.stylist_id === undefined && (
+                <Check className="h-4 w-4 text-primary mt-2" />
+              )}
+            </button>
+
+            {/* Stylist Options */}
+            {activeStylists.map((stylist) => (
+              <button
+                key={stylist.id}
+                type="button"
+                onClick={() => handleStylistSelect(stylist.id)}
+                className={cn(
+                  'p-4 rounded-lg border-2 text-left transition-all',
+                  formData.stylist_id === stylist.id
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                    : 'border-muted hover:border-muted-foreground/30'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: stylist.color }}
+                  />
+                  <span className="font-medium">{stylist.name}</span>
+                </div>
+                {formData.stylist_id === stylist.id && (
+                  <Check className="h-4 w-4 text-primary mt-2" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Selected Summary */}
       {selectedDate && formData.time && (
         <Card className="bg-primary/5 border-primary/20">
@@ -151,6 +218,11 @@ export function DateTimeStep() {
               {format(selectedDate, 'EEEE, MMMM d, yyyy')} at{' '}
               {timeSlots.find((s) => s.time === formData.time)?.label}
             </p>
+            {formData.stylist_id && (
+              <p className="text-sm text-muted-foreground mt-1">
+                with {activeStylists.find((s) => s.id === formData.stylist_id)?.name}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

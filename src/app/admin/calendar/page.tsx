@@ -55,10 +55,11 @@ import {
   Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockBusinessHours, getAppointmentsWithDetails, updateAppointmentStatus, updateAppointmentTime } from '@/lib/mock-data';
+import { mockBusinessHours, mockStylists, getAppointmentsWithDetails, updateAppointmentStatus, updateAppointmentTime, updateAppointmentStylist } from '@/lib/mock-data';
 import { formatPrice, formatDuration } from '@/lib/availability';
-import { Appointment, Client, Pet, Service } from '@/types/database';
+import { Appointment, Client, Pet, Service, Stylist } from '@/types/database';
 import { toast } from 'sonner';
+import { StylistLanes } from './components/StylistLanes';
 
 type ViewMode = 'day' | 'week' | 'month';
 type StatusFilter = 'all' | 'pending' | 'confirmed' | 'completed';
@@ -67,6 +68,7 @@ type AppointmentWithDetails = Appointment & {
   client: Client;
   pet: Pet;
   service: Service;
+  stylist?: Stylist;
 };
 
 export default function AdminCalendarPage() {
@@ -80,6 +82,19 @@ export default function AdminCalendarPage() {
     time: '',
   });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [dayPopupDate, setDayPopupDate] = useState<Date | null>(null);
+
+  // Selected day for week view (defaults to today if in current week, otherwise first day of week)
+  const [selectedDay, setSelectedDay] = useState<Date>(() => {
+    const today = new Date();
+    const weekStart = startOfWeek(currentDate);
+    const weekEnd = endOfWeek(currentDate);
+    // If today is within the current week view, use today; otherwise use first day
+    if (today >= weekStart && today <= weekEnd) {
+      return today;
+    }
+    return weekStart;
+  });
 
   const allAppointments = useMemo(() => getAppointmentsWithDetails(), [refreshKey]);
 
@@ -179,6 +194,26 @@ export default function AdminCalendarPage() {
     }
   }, [selectedAppointment, rescheduleForm]);
 
+  const handleStylistChange = useCallback((stylistId: string) => {
+    if (!selectedAppointment) return;
+
+    const newStylistId = stylistId === 'unassigned' ? null : stylistId;
+    const updated = updateAppointmentStylist(selectedAppointment.id, newStylistId);
+
+    if (updated) {
+      toast.success(newStylistId ? 'Stylist assigned!' : 'Stylist unassigned!');
+      setRefreshKey((k) => k + 1);
+      const newStylist = newStylistId ? mockStylists.find((s) => s.id === newStylistId) : undefined;
+      setSelectedAppointment({
+        ...selectedAppointment,
+        stylist_id: newStylistId || undefined,
+        stylist: newStylist,
+      });
+    } else {
+      toast.error('Failed to update stylist');
+    }
+  }, [selectedAppointment]);
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate);
     const end = endOfWeek(currentDate);
@@ -207,7 +242,11 @@ export default function AdminCalendarPage() {
 
   const navigatePrev = () => {
     if (viewMode === 'week') {
-      setCurrentDate(subWeeks(currentDate, 1));
+      const newDate = subWeeks(currentDate, 1);
+      setCurrentDate(newDate);
+      // Update selectedDay to first open day of the new week or first day
+      const newWeekStart = startOfWeek(newDate);
+      setSelectedDay(newWeekStart);
     } else if (viewMode === 'month') {
       setCurrentDate(subMonths(currentDate, 1));
     } else {
@@ -217,7 +256,11 @@ export default function AdminCalendarPage() {
 
   const navigateNext = () => {
     if (viewMode === 'week') {
-      setCurrentDate(addWeeks(currentDate, 1));
+      const newDate = addWeeks(currentDate, 1);
+      setCurrentDate(newDate);
+      // Update selectedDay to first open day of the new week or first day
+      const newWeekStart = startOfWeek(newDate);
+      setSelectedDay(newWeekStart);
     } else if (viewMode === 'month') {
       setCurrentDate(addMonths(currentDate, 1));
     } else {
@@ -245,7 +288,9 @@ export default function AdminCalendarPage() {
   }, []);
 
   const goToToday = () => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDay(today);
   };
 
   const getStatusColor = (status: string) => {
@@ -261,6 +306,15 @@ export default function AdminCalendarPage() {
       default:
         return 'bg-gray-500';
     }
+  };
+
+  // Get appointment background color - uses stylist color if assigned, grey if unassigned
+  const getAppointmentColor = (apt: AppointmentWithDetails): string => {
+    // If no stylist assigned, always show grey
+    if (!apt.stylist?.color) {
+      return '#9ca3af'; // gray-400 - neutral grey for unassigned
+    }
+    return apt.stylist.color;
   };
 
   const getAppointmentPosition = (apt: AppointmentWithDetails) => {
@@ -404,10 +458,8 @@ export default function AdminCalendarPage() {
                         <button
                           key={apt.id}
                           onClick={() => setSelectedAppointment(apt)}
-                          className={cn(
-                            'w-full text-left text-[10px] px-1.5 py-0.5 rounded text-white truncate group relative',
-                            getStatusColor(apt.status)
-                          )}
+                          className="w-full text-left text-[10px] px-1.5 py-0.5 rounded text-white truncate group relative"
+                          style={{ backgroundColor: getAppointmentColor(apt) }}
                         >
                           <span className="truncate">
                             {format(new Date(apt.start_time), 'h:mm')} {apt.pet.name}
@@ -427,9 +479,12 @@ export default function AdminCalendarPage() {
                         </button>
                       ))}
                       {dayAppointments.length > 3 && (
-                        <p className="text-[10px] text-muted-foreground text-center">
+                        <button
+                          onClick={() => setDayPopupDate(day)}
+                          className="text-[10px] text-muted-foreground hover:text-primary hover:underline w-full text-center"
+                        >
                           +{dayAppointments.length - 3} more
-                        </p>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -439,119 +494,21 @@ export default function AdminCalendarPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'week' ? (
-        /* Week View */
+        /* Week View - Stylist Lanes */
         <Card>
-          <CardContent className="p-0 overflow-x-auto">
-            <div className="min-w-[800px]">
-              {/* Day Headers */}
-              <div className="grid grid-cols-8 border-b">
-                <div className="p-3 text-center text-sm font-medium text-muted-foreground border-r">
-                  Time
-                </div>
-                {weekDays.map((day) => {
-                  const dayOpen = isDayOpen(day);
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={cn(
-                        'p-3 text-center border-r last:border-r-0',
-                        !dayOpen && 'bg-muted/50'
-                      )}
-                    >
-                      <p className="text-sm text-muted-foreground">
-                        {format(day, 'EEE')}
-                      </p>
-                      <p
-                        className={cn(
-                          'text-lg font-semibold',
-                          isToday(day) &&
-                            'h-8 w-8 mx-auto rounded-full bg-primary text-primary-foreground flex items-center justify-center'
-                        )}
-                      >
-                        {format(day, 'd')}
-                      </p>
-                      {!dayOpen && (
-                        <Badge variant="secondary" className="text-xs mt-1">
-                          Closed
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Time Grid */}
-              <div className="relative">
-                {timeSlots.map((time) => (
-                  <div key={time} className="grid grid-cols-8 h-16 border-b">
-                    <div className="p-2 text-xs text-muted-foreground border-r text-right pr-3">
-                      {format(parse(time, 'HH:mm', new Date()), 'h a')}
-                    </div>
-                    {weekDays.map((day) => (
-                      <div
-                        key={`${day.toISOString()}-${time}`}
-                        className={cn(
-                          'border-r last:border-r-0 relative',
-                          !isDayOpen(day) && 'bg-muted/30'
-                        )}
-                      />
-                    ))}
-                  </div>
-                ))}
-
-                {/* Appointments Overlay */}
-                {weekDays.map((day, dayIndex) => {
-                  const dayAppointments = getAppointmentsForDate(day);
-                  return dayAppointments.map((apt) => {
-                    if (apt.status === 'cancelled') return null;
-                    const { top, height } = getAppointmentPosition(apt);
-                    return (
-                      <button
-                        key={apt.id}
-                        onClick={() => setSelectedAppointment(apt)}
-                        className={cn(
-                          'absolute rounded-md p-2 text-left text-xs text-white overflow-hidden transition-transform hover:scale-[1.02] hover:z-10 group',
-                          getStatusColor(apt.status)
-                        )}
-                        style={{
-                          top: `${top}px`,
-                          height: `${height}px`,
-                          left: `calc(${(dayIndex + 1) * 12.5}% + 2px)`,
-                          width: 'calc(12.5% - 4px)',
-                        }}
-                      >
-                        <p className="font-medium truncate">{apt.pet.name}</p>
-                        <p className="truncate opacity-90">{apt.service.name}</p>
-                        <p className="truncate opacity-75">
-                          {format(new Date(apt.start_time), 'h:mm a')}
-                        </p>
-                        {/* Quick Actions on Hover */}
-                        <div className="hidden group-hover:flex absolute right-1 top-1 gap-1">
-                          {apt.status === 'pending' && (
-                            <button
-                              onClick={(e) => handleQuickConfirm(apt, e)}
-                              className="p-1 bg-white/20 rounded hover:bg-white/40"
-                              title="Confirm"
-                            >
-                              <Check className="h-3 w-3" />
-                            </button>
-                          )}
-                          {apt.status === 'confirmed' && (
-                            <button
-                              onClick={(e) => handleQuickComplete(apt, e)}
-                              className="p-1 bg-white/20 rounded hover:bg-white/40"
-                              title="Mark Complete"
-                            >
-                              <Check className="h-3 w-3" />
-                            </button>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  });
-                })}
-              </div>
-            </div>
+          <CardContent className="p-0">
+            <StylistLanes
+              weekDays={weekDays}
+              selectedDay={selectedDay}
+              onDayChange={setSelectedDay}
+              appointments={appointmentsWithDetails}
+              stylists={mockStylists}
+              onAppointmentClick={setSelectedAppointment}
+              onQuickConfirm={handleQuickConfirm}
+              onQuickComplete={handleQuickComplete}
+              isDayOpen={isDayOpen}
+              getAppointmentColor={getAppointmentColor}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -592,10 +549,8 @@ export default function AdminCalendarPage() {
                                 <button
                                   key={apt.id}
                                   onClick={() => setSelectedAppointment(apt)}
-                                  className={cn(
-                                    'w-full p-3 rounded-lg text-left text-white transition-transform hover:scale-[1.01]',
-                                    getStatusColor(apt.status)
-                                  )}
+                                  className="w-full p-3 rounded-lg text-left text-white transition-transform hover:scale-[1.01]"
+                                  style={{ backgroundColor: getAppointmentColor(apt) }}
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -737,6 +692,50 @@ export default function AdminCalendarPage() {
                   </div>
                 </div>
 
+                {/* Stylist Assignment */}
+                <div>
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Assigned Stylist
+                  </h4>
+                  <Select
+                    value={selectedAppointment.stylist_id || 'unassigned'}
+                    onValueChange={handleStylistChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue>
+                        {selectedAppointment.stylist ? (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: selectedAppointment.stylist.color }}
+                            />
+                            {selectedAppointment.stylist.name}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">
+                        <span className="text-muted-foreground">Unassigned</span>
+                      </SelectItem>
+                      {mockStylists.filter((s) => s.is_active).map((stylist) => (
+                        <SelectItem key={stylist.id} value={stylist.id}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: stylist.color }}
+                            />
+                            {stylist.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Appointment Notes */}
                 {selectedAppointment.notes && (
                   <div>
@@ -830,6 +829,82 @@ export default function AdminCalendarPage() {
                   Confirm Reschedule
                 </Button>
               </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Appointments Popup Dialog */}
+      <Dialog
+        open={!!dayPopupDate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDayPopupDate(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {dayPopupDate && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                  {format(dayPopupDate, 'EEEE, MMMM d')}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {getAppointmentsForDate(dayPopupDate)
+                  .filter((apt) => apt.status !== 'cancelled')
+                  .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+                  .map((apt) => (
+                    <button
+                      key={apt.id}
+                      onClick={() => {
+                        setDayPopupDate(null);
+                        setSelectedAppointment(apt);
+                      }}
+                      className="w-full p-3 rounded-lg text-left text-white transition-all hover:scale-[1.01] hover:shadow-md"
+                      style={{ backgroundColor: getAppointmentColor(apt) }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span className="font-medium">
+                            {format(new Date(apt.start_time), 'h:mm a')}
+                          </span>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'text-[10px] capitalize',
+                            apt.status === 'confirmed' && 'bg-green-200 text-green-800',
+                            apt.status === 'pending' && 'bg-yellow-200 text-yellow-800',
+                            apt.status === 'completed' && 'bg-blue-200 text-blue-800'
+                          )}
+                        >
+                          {apt.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Dog className="h-4 w-4" />
+                        <span className="font-medium">{apt.pet.name}</span>
+                        <span className="text-sm opacity-90">({apt.pet.breed})</span>
+                      </div>
+                      <p className="text-sm mt-1 opacity-90">
+                        {apt.service.name} - {formatDuration(apt.service.duration_minutes)}
+                      </p>
+                      <p className="text-sm opacity-75">
+                        {apt.client.first_name} {apt.client.last_name}
+                      </p>
+                    </button>
+                  ))}
+                {getAppointmentsForDate(dayPopupDate).filter((apt) => apt.status !== 'cancelled').length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">
+                    No appointments for this day
+                  </p>
+                )}
+              </div>
             </>
           )}
         </DialogContent>

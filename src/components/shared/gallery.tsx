@@ -7,8 +7,13 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { IMAGES } from '@/lib/images';
 
+interface GalleryImage {
+  readonly src: string;
+  readonly alt: string;
+}
+
 interface GalleryProps {
-  images?: readonly string[] | string[];
+  images?: readonly GalleryImage[];
   title?: string;
   columns?: 3 | 4;
 }
@@ -57,15 +62,15 @@ export function Gallery({
         )}
 
         <div className={`grid ${gridCols} gap-4`}>
-          {images.map((src, index) => (
+          {images.map((image, index) => (
             <button
               key={index}
               onClick={() => openLightbox(index)}
               className="relative aspect-square overflow-hidden rounded-lg group cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
               <Image
-                src={src}
-                alt={`Groomed dog ${index + 1}`}
+                src={image.src}
+                alt={image.alt}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -81,8 +86,8 @@ export function Gallery({
             <div className="relative aspect-square md:aspect-video flex items-center justify-center">
               {selectedIndex !== null && (
                 <Image
-                  src={images[selectedIndex]}
-                  alt={`Groomed dog ${selectedIndex + 1}`}
+                  src={images[selectedIndex].src}
+                  alt={images[selectedIndex].alt}
                   fill
                   className="object-contain"
                   sizes="100vw"

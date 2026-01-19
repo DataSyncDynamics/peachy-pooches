@@ -26,7 +26,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
           : 'sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'
       }
     >
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container flex h-24 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
@@ -34,7 +34,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
             alt="Peachy Pooches Logo"
             width={120}
             height={19}
-            className={`h-8 w-auto ${isTransparent ? 'brightness-0 invert' : ''}`}
+            className={`h-14 w-auto ${isTransparent ? 'brightness-0 invert' : ''}`}
           />
           <span className={`text-sm ${isTransparent ? 'text-white/70' : 'text-muted-foreground'}`}>
             {BUSINESS.subtitle}

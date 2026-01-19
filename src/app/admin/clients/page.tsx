@@ -55,6 +55,13 @@ import {
   Crown,
   Clock,
   UserPlus,
+  Cake,
+  Scissors,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
+  FileText,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { mockClients, mockPets, mockAppointments, mockServices, updateClient } from '@/lib/mock-data';
@@ -62,7 +69,7 @@ import { formatPrice } from '@/lib/availability';
 import { Client, Pet, Appointment } from '@/types/database';
 import { toast } from 'sonner';
 import { exportToCSV, clientExportColumns } from '@/lib/export';
-import { cn } from '@/lib/utils';
+import { cn, calculatePetAge, getVaccinationStatus, isBirthdaySoon } from '@/lib/utils';
 
 interface ClientWithStats extends Client {
   pets: Pet[];
@@ -90,6 +97,13 @@ const tagConfig = {
   regular: { label: 'Regular', color: 'bg-blue-100 text-blue-800', icon: Star },
   new: { label: 'New', color: 'bg-green-100 text-green-800', icon: UserPlus },
   inactive: { label: 'Inactive', color: 'bg-gray-100 text-gray-800', icon: Clock },
+};
+
+const verificationStatusConfig = {
+  pending_review: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  documents_requested: { label: 'Docs Requested', color: 'bg-blue-100 text-blue-800', icon: FileText },
+  verified: { label: 'Verified', color: 'bg-green-100 text-green-800', icon: ShieldCheck },
+  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: ShieldX },
 };
 
 export default function ClientsPage() {
@@ -644,10 +658,18 @@ export default function ClientsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn('gap-1', tagConfig[client.tag].color)}>
-                          <TagIcon className="h-3 w-3" />
-                          {tagConfig[client.tag].label}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge className={cn('gap-1', tagConfig[client.tag].color)}>
+                            <TagIcon className="h-3 w-3" />
+                            {tagConfig[client.tag].label}
+                          </Badge>
+                          {client.verification_status !== 'verified' && (
+                            <Badge className={cn('gap-1 text-xs', verificationStatusConfig[client.verification_status].color)}>
+                              {React.createElement(verificationStatusConfig[client.verification_status].icon, { className: 'h-3 w-3' })}
+                              {verificationStatusConfig[client.verification_status].label}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -680,13 +702,17 @@ export default function ClientsPage() {
                     </span>
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p>
                         {selectedClient.first_name} {selectedClient.last_name}
                       </p>
                       <Badge className={cn('gap-1', tagConfig[selectedClient.tag].color)}>
                         {React.createElement(tagConfig[selectedClient.tag].icon, { className: 'h-3 w-3' })}
                         {tagConfig[selectedClient.tag].label}
+                      </Badge>
+                      <Badge className={cn('gap-1', verificationStatusConfig[selectedClient.verification_status].color)}>
+                        {React.createElement(verificationStatusConfig[selectedClient.verification_status].icon, { className: 'h-3 w-3' })}
+                        {verificationStatusConfig[selectedClient.verification_status].label}
                       </Badge>
                     </div>
                     <p className="text-sm font-normal text-muted-foreground">
@@ -733,25 +759,86 @@ export default function ClientsPage() {
                     <Dog className="h-4 w-4" />
                     Pets
                   </h4>
-                  <div className="space-y-2">
-                    {selectedClient.pets.map((pet) => (
-                      <div
-                        key={pet.id}
-                        className="p-3 rounded-lg border flex items-center justify-between"
-                      >
-                        <div>
-                          <p className="font-medium">{pet.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {pet.breed} - {pet.size}
-                          </p>
+                  <div className="space-y-3">
+                    {selectedClient.pets.map((pet) => {
+                      const age = calculatePetAge(pet.birth_date);
+                      const vaccinationStatus = getVaccinationStatus(pet.vaccination_expiry);
+                      const hasBirthdaySoon = isBirthdaySoon(pet.birth_date, 7);
+
+                      return (
+                        <div
+                          key={pet.id}
+                          className={cn(
+                            "p-3 rounded-lg border",
+                            hasBirthdaySoon && "border-pink-300 bg-pink-50/50"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {/* Pet photo placeholder or initials */}
+                              {pet.photo_url ? (
+                                <img
+                                  src={pet.photo_url}
+                                  alt={pet.name}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                  <Dog className="h-5 w-5 text-blue-600" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">{pet.name}</p>
+                                  {hasBirthdaySoon && (
+                                    <Cake className="h-4 w-4 text-pink-500" />
+                                  )}
+                                  {age && (
+                                    <span className="text-sm text-muted-foreground">{age}</span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {pet.breed} · {pet.size}
+                                </p>
+                                {pet.preferred_style && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                    <Scissors className="h-3 w-3" />
+                                    {pet.preferred_style}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status badges row */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            {pet.temperament_notes && (
+                              <Badge variant="secondary" className="text-xs">
+                                {pet.temperament_notes}
+                              </Badge>
+                            )}
+                            {vaccinationStatus === 'valid' && (
+                              <Badge className="text-xs bg-green-100 text-green-800 hover:bg-green-100 gap-1">
+                                <ShieldCheck className="h-3 w-3" />
+                                Vaccines OK
+                              </Badge>
+                            )}
+                            {vaccinationStatus === 'expiring' && (
+                              <Badge className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-100 gap-1">
+                                <ShieldAlert className="h-3 w-3" />
+                                Vaccines expiring
+                              </Badge>
+                            )}
+                            {vaccinationStatus === 'expired' && (
+                              <Badge className="text-xs bg-red-100 text-red-800 hover:bg-red-100 gap-1">
+                                <ShieldX className="h-3 w-3" />
+                                Vaccines expired
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        {pet.temperament_notes && (
-                          <Badge variant="secondary" className="text-xs">
-                            {pet.temperament_notes}
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
