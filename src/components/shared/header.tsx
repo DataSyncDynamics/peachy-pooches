@@ -36,9 +36,6 @@ export function Header({ variant = 'default' }: HeaderProps) {
             height={62}
             className={`h-14 w-auto ${isTransparent ? 'brightness-0 invert' : ''}`}
           />
-          <span className={`text-sm ${isTransparent ? 'text-white/70' : 'text-muted-foreground'}`}>
-            {BUSINESS.subtitle}
-          </span>
         </Link>
 
         {/* Desktop Navigation */}
