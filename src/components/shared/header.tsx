@@ -43,6 +43,42 @@ export function Header({ variant = 'default' }: HeaderProps) {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
+          <Link
+            href="/#services"
+            className={`text-sm font-medium transition-colors ${isTransparent ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Services
+          </Link>
+          <Link
+            href="/#how-it-works"
+            className={`text-sm font-medium transition-colors ${isTransparent ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            How It Works
+          </Link>
+          <Link
+            href="/#gallery"
+            className={`text-sm font-medium transition-colors ${isTransparent ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Gallery
+          </Link>
+          <Link
+            href="/#reviews"
+            className={`text-sm font-medium transition-colors ${isTransparent ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Reviews
+          </Link>
+          <Link
+            href="/#contact"
+            className={`text-sm font-medium transition-colors ${isTransparent ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Contact
+          </Link>
+          <Link
+            href="/about"
+            className={`text-sm font-medium transition-colors ${isTransparent ? 'text-white/80 hover:text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            About
+          </Link>
           <Button
             variant="outline"
             size="sm"
@@ -82,6 +118,28 @@ export function Header({ variant = 'default' }: HeaderProps) {
           </SheetTrigger>
           <SheetContent side="right" className="w-[300px] sm:w-[400px]">
             <nav className="flex flex-col gap-4 mt-8">
+              <Link
+                href="/about"
+                onClick={() => setIsOpen(false)}
+                className="text-lg font-medium hover:text-primary transition-colors"
+              >
+                About Us
+              </Link>
+              <Link href="/#services" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">
+                Services
+              </Link>
+              <Link href="/#how-it-works" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">
+                How It Works
+              </Link>
+              <Link href="/#gallery" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">
+                Gallery
+              </Link>
+              <Link href="/#reviews" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">
+                Reviews
+              </Link>
+              <Link href="/#contact" onClick={() => setIsOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">
+                Contact
+              </Link>
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}

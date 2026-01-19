@@ -17,6 +17,11 @@ import {
   Mail,
   MessageSquare,
   ChevronDown,
+  Droplets,
+  Wind,
+  Shield,
+  Leaf,
+  Smile,
 } from 'lucide-react';
 import { BUSINESS } from '@/lib/constants';
 import { IMAGES } from '@/lib/images';
@@ -31,6 +36,7 @@ const features = [
     title: 'Book 24/7',
     description: 'Schedule your appointment anytime, even at 2am on a Sunday',
     extendedDescription: 'Our online booking system is always available. Pick your preferred date and time that works for your schedule.',
+    color: 'teal' as const,
   },
   {
     step: 2,
@@ -38,6 +44,7 @@ const features = [
     title: 'No Phone Tag',
     description: 'Skip the back-and-forth calls. Book in under 2 minutes',
     extendedDescription: 'No more waiting on hold or playing phone tag. Select your service, choose a time, and you\'re done.',
+    color: 'gold' as const,
   },
   {
     step: 3,
@@ -45,6 +52,7 @@ const features = [
     title: 'Instant Confirmation',
     description: 'Get email confirmation with all the details you need',
     extendedDescription: 'Receive immediate confirmation with appointment details, directions, and what to expect.',
+    color: 'purple' as const,
   },
   {
     step: 4,
@@ -100,7 +108,18 @@ const enhancedServices = [
     includedFeatures: ['Microbubble Bath', 'Deep Clean', 'Skin Therapy'],
     perfectFor: 'Dogs with allergies, sensitive skin, or skin conditions',
     accentColor: 'purple',
-    imageUrl: IMAGES.services.theraClean,
+    imageUrl: 'https://images.squarespace-cdn.com/content/v1/671fb224261742588cec05eb/9a6c9f28-6fd7-4739-b96d-4c66389d6195/Image+3-20-25+at+4.55%E2%80%AFPM.jpeg',
+  },
+  {
+    id: 'nail-trimming',
+    name: 'Nail Trimming',
+    description: 'Professional nail care to keep your pup comfortable and healthy',
+    price: 25,
+    duration: '15 minutes',
+    includedFeatures: ['Nail Trim', 'Paw Pad Check'],
+    perfectFor: 'All dogs needing regular nail maintenance',
+    accentColor: 'teal',
+    imageUrl: IMAGES.services.nailTrimming,
   },
 ];
 
@@ -175,7 +194,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section - Timeline Journey */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-background" id="how-it-works">
         <div className="container mx-auto px-4">
           {/* Section Header */}
           <div className="text-center mb-12">
@@ -193,6 +212,38 @@ export default function HomePage() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               const isReward = 'isReward' in feature && feature.isReward;
+
+              // Color mapping for icon backgrounds, colors, and badges
+              const getIconColors = () => {
+                if (isReward) {
+                  return {
+                    bg: 'bg-gradient-to-br from-pink-100 to-rose-200',
+                    icon: 'text-pink-600',
+                    badge: 'bg-gradient-to-br from-pink-400 to-rose-500 text-white',
+                  };
+                }
+                const colorMap = {
+                  teal: {
+                    bg: 'bg-gradient-to-br from-teal-100 to-cyan-200',
+                    icon: 'text-teal-600',
+                    badge: 'bg-gradient-to-br from-teal-400 to-cyan-500 text-white',
+                  },
+                  gold: {
+                    bg: 'bg-gradient-to-br from-primary/20 to-secondary',
+                    icon: 'text-primary',
+                    badge: 'bg-primary text-primary-foreground',
+                  },
+                  purple: {
+                    bg: 'bg-gradient-to-br from-purple-100 to-violet-200',
+                    icon: 'text-purple-600',
+                    badge: 'bg-gradient-to-br from-purple-400 to-violet-500 text-white',
+                  },
+                };
+                const color = 'color' in feature && feature.color ? feature.color : 'gold';
+                return colorMap[color as keyof typeof colorMap];
+              };
+              const iconColors = getIconColors();
+
               return (
                 <div key={feature.title} className="relative animate-fade-up" style={{ animationDelay: `${index * 100}ms` }}>
                   {/* Connecting line on desktop (hidden on last card) */}
@@ -200,28 +251,20 @@ export default function HomePage() {
                     <div className="hidden lg:block absolute top-12 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/40 to-primary/10 z-0" />
                   )}
 
-                  <Card className={`relative bg-card border-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                  <Card className={`relative h-full bg-card border-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
                     isReward
                       ? 'border-pink-300 hover:border-pink-400 bg-gradient-to-br from-white to-pink-50'
                       : 'border-primary/20 hover:border-primary/40'
                   }`}>
                     <CardContent className="p-6 pt-8 text-center">
                       {/* Step Badge */}
-                      <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-md ${
-                        isReward
-                          ? 'bg-gradient-to-br from-pink-400 to-rose-500 text-white'
-                          : 'bg-primary text-primary-foreground'
-                      }`}>
+                      <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-md ${iconColors.badge}`}>
                         {feature.step}
                       </div>
 
                       {/* Icon Circle */}
-                      <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${
-                        isReward
-                          ? 'bg-gradient-to-br from-pink-100 to-rose-200'
-                          : 'bg-gradient-to-br from-primary/20 to-secondary'
-                      }`}>
-                        <Icon className={`h-10 w-10 ${isReward ? 'text-pink-600' : 'text-primary'}`} />
+                      <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${iconColors.bg}`}>
+                        <Icon className={`h-10 w-10 ${iconColors.icon}`} />
                       </div>
 
                       <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
@@ -238,7 +281,7 @@ export default function HomePage() {
       </section>
 
       {/* Services Preview - Journey Cards */}
-      <section className="py-20 bg-secondary/30">
+      <section className="py-20 bg-secondary/30" id="services">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
@@ -264,6 +307,15 @@ export default function HomePage() {
                       pill: 'bg-amber-100 text-amber-800',
                       perfectFor: 'bg-amber-50 border-amber-200',
                       button: 'hover:bg-amber-500',
+                    };
+                  case 'teal':
+                    return {
+                      header: 'from-teal-100 via-cyan-50 to-teal-100',
+                      border: 'hover:border-teal-400',
+                      price: 'text-teal-600',
+                      pill: 'bg-teal-100 text-teal-800',
+                      perfectFor: 'bg-teal-50 border-teal-200',
+                      button: 'hover:bg-teal-500',
                     };
                   case 'mint':
                     return {
@@ -309,6 +361,7 @@ export default function HomePage() {
                       alt={`${service.name} grooming result`}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      style={service.imagePosition ? { objectPosition: service.imagePosition } : undefined}
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                     {/* Subtle gradient overlay at bottom for smooth transition */}
@@ -388,17 +441,114 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Thera-Clean Spotlight Section */}
+      <section className="py-20 bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left: Hero Image */}
+              <div className="relative">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                  <Image
+                    src={IMAGES.services.theraClean}
+                    alt="Dog enjoying Thera-Clean Microbubble Spa treatment"
+                    width={600}
+                    height={500}
+                    className="w-full h-[400px] lg:h-[500px] object-cover"
+                  />
+                  {/* Purple accent overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-violet-900/30 to-transparent" />
+                </div>
+                {/* Floating badge */}
+                <div className="absolute -bottom-4 right-2 sm:-right-4 bg-white rounded-2xl shadow-xl p-4 animate-fade-up">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
+                      <Sparkles className="h-6 w-6 text-violet-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-violet-600">Chemical-Free</p>
+                      <p className="text-xs text-muted-foreground">100% Natural Clean</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Content */}
+              <div>
+                <Badge className="mb-4 bg-violet-100 text-violet-700 border-violet-200">
+                  <Droplets className="h-3 w-3 mr-1" />
+                  Featured Service
+                </Badge>
+                <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                  Thera-Clean Microbubble Spa
+                </h2>
+                <p className="text-xl text-violet-600 font-medium mb-6">
+                  This is not your typical bath
+                </p>
+                <p className="text-muted-foreground mb-8">
+                  Our advanced microbubble technology provides a deep, therapeutic clean that goes beyond traditional bathing. Billions of tiny bubbles penetrate deep into the coat and skin to gently remove dirt, allergens, and irritants without harsh chemicals.
+                </p>
+
+                {/* Benefits Grid */}
+                <div className="grid sm:grid-cols-2 gap-4 mb-8">
+                  {[
+                    { icon: Leaf, title: 'Deep Natural Cleaning', desc: 'No chemicals or soaps needed' },
+                    { icon: Wind, title: 'Reduces Odors', desc: 'Eliminates trapped irritants' },
+                    { icon: Shield, title: 'Decreases Itching', desc: 'Soothes irritated skin' },
+                    { icon: Sparkles, title: 'Minimizes Shedding', desc: 'Healthier coat & skin' },
+                    { icon: Smile, title: 'Eases Anxiety', desc: 'Deep tissue massage effect' },
+                    { icon: Heart, title: 'Sensitive Skin Safe', desc: 'Ideal for allergies' },
+                  ].map((benefit) => (
+                    <div
+                      key={benefit.title}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-white/60 backdrop-blur-sm border border-violet-100 hover:bg-white hover:shadow-md transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+                        <benefit.icon className="h-5 w-5 text-violet-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{benefit.title}</p>
+                        <p className="text-xs text-muted-foreground">{benefit.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button asChild size="lg" className="bg-violet-600 hover:bg-violet-700 text-white">
+                    <Link href="/book">
+                      Book Thera-Clean
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="font-semibold text-violet-600">Starting at $75</span>
+                    <span>•</span>
+                    <span>~1.5 hours</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Gallery Section */}
-      <Gallery
-        title="Our Happy Pups"
-        columns={4}
-      />
+      <div id="gallery">
+        <Gallery
+          title="Our Happy Pups"
+          columns={4}
+        />
+      </div>
 
       {/* Reviews Section */}
-      <Reviews />
+      <div id="reviews">
+        <Reviews />
+      </div>
 
       {/* Hours & Location */}
-      <section className="py-16 bg-background">
+      <section className="py-16 bg-background" id="contact">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="grid md:grid-cols-2 gap-8">
@@ -426,36 +576,36 @@ export default function HomePage() {
               </div>
 
               {/* Contact */}
-              <div className="bg-secondary rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
-                <MapPin className="h-10 w-10 text-accent mb-4" />
-                <h3 className="text-xl font-bold text-foreground mb-6">Location & Contact</h3>
+              <div className="bg-[#212934] rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+                <MapPin className="h-10 w-10 text-primary mb-4" />
+                <h3 className="text-xl font-bold text-white mb-6">Location & Contact</h3>
                 <div className="space-y-6">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Visit Us</p>
-                    <p className="font-medium text-foreground">{BUSINESS.address.street}</p>
-                    <p className="text-foreground/80">{BUSINESS.address.floor}</p>
-                    <p className="text-foreground/80">{BUSINESS.address.city}, {BUSINESS.address.state} {BUSINESS.address.zip}</p>
+                    <p className="text-sm font-medium text-white/60 mb-2">Visit Us</p>
+                    <p className="font-medium text-white">{BUSINESS.address.street}</p>
+                    <p className="text-white/80">{BUSINESS.address.floor}</p>
+                    <p className="text-white/80">{BUSINESS.address.city}, {BUSINESS.address.state} {BUSINESS.address.zip}</p>
                   </div>
                   <div className="space-y-3">
                     <a
                       href={`tel:${BUSINESS.phone.replace(/-/g, '')}`}
-                      className="flex items-center gap-3 text-foreground hover:text-accent transition-colors group"
+                      className="flex items-center gap-3 text-white hover:text-primary transition-colors group"
                     >
-                      <Phone className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                      <Phone className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
                       <span className="font-medium">{BUSINESS.phone}</span>
                     </a>
                     <a
                       href={`sms:${BUSINESS.textNumber.replace(/-/g, '')}`}
-                      className="flex items-center gap-3 text-foreground hover:text-accent transition-colors group"
+                      className="flex items-center gap-3 text-white hover:text-primary transition-colors group"
                     >
-                      <MessageSquare className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                      <MessageSquare className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
                       <span className="font-medium">Text: {BUSINESS.textNumber}</span>
                     </a>
                     <a
                       href={`mailto:${BUSINESS.email}`}
-                      className="flex items-center gap-3 text-foreground hover:text-accent transition-colors group"
+                      className="flex items-center gap-3 text-white hover:text-primary transition-colors group"
                     >
-                      <Mail className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                      <Mail className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
                       <span className="font-medium">{BUSINESS.email}</span>
                     </a>
                   </div>
