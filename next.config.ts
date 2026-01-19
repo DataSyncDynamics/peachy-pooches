@@ -17,6 +17,16 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'countrysidepetgrooming.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.squarespace-cdn.com',
+        pathname: '/**',
+      },
     ],
   },
 };
